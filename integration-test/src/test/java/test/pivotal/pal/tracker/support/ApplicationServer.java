@@ -37,7 +37,9 @@ public class ApplicationServer {
 
         start(envMapBuilder()
             .put("SPRING_DATASOURCE_URL", dbUrl)
-            .put("REGISTRATION_SERVER_ENDPOINT", "http://localhost:8883")
+            .put("EUREKA_CLIENT_ENABLED", "false")
+            .put("RIBBON_EUREKA_ENABLED", "false")
+            .put("REGISTRATION_SERVER_RIBBON_LISTOFSERVERS", "http://localhost:8883")
             .build()
         );
     }
@@ -53,7 +55,7 @@ public class ApplicationServer {
 
     private static void waitUntilServerIsUp(String port) throws InterruptedException {
         HttpClient httpClient = new HttpClient();
-        int timeout = 120;
+        int timeout = 1200;
         Instant start = Instant.now();
         boolean isUp = false;
 
@@ -61,9 +63,11 @@ public class ApplicationServer {
 
         while (!isUp) {
             try {
-                httpClient.get("http://localhost:" + port);
-                isUp = true;
-                System.out.println(" server is up.");
+                HttpClient.Response response = httpClient.get("http://localhost:" + port);
+                if ( response.status == 200 ) {
+                    isUp = true;
+                    System.out.println(" server is up.");
+                }
             } catch (Throwable e) {
 
                 long timeSpent = ChronoUnit.SECONDS.between(start, Instant.now());
